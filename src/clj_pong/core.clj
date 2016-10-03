@@ -28,9 +28,20 @@
 (defn- draw-ellipse [r]
   (q/ellipse (:x r) (:y r) (:width r) (:height r)))
 
-(def left-racket-default {:x racket-width :y (/ (- window-height racket-height) 2) :width racket-width :height racket-height})
-(def right-racket-default {:x (- window-width (* 2 racket-width)) :y (/ (- window-height racket-height) 2) :width racket-width :height racket-height})
-(def ball-default {:x (/ (- window-width ball-width) 2) :y (/ (- window-height ball-height) 2) :width ball-width :height ball-height :direction [ball-speed 0]})
+(def left-racket-default {:x racket-width
+                          :y (/ (- window-height racket-height) 2)
+                          :width racket-width
+                          :height racket-height
+                          :y-vel 0})
+(def right-racket-default {:x (- window-width (* 2 racket-width))
+                           :y (/ (- window-height racket-height) 2)
+                           :width racket-width
+                           :height racket-height})
+(def ball-default {:x (/ (- window-width ball-width) 2)
+                   :y (/ (- window-height ball-height) 2)
+                   :width ball-width
+                   :height ball-height
+                   :direction [ball-speed 0]})
 
 (defn- reset-game-field [state]
   (assoc state :left-racket left-racket-default
@@ -73,6 +84,10 @@
           (recur ball (rest rackets)))
       ball)) ball [left-racket right-racket]))
 
+(defn- update-left-racket [racket dt]
+  (println racket)
+  (assoc racket :y (+ (:y racket) (* racket-speed dt (:y-vel racket)))))
+
 (defn- update-right-racket [racket ball dt]
   (cond
     (< (:y ball) (:y racket))
@@ -97,13 +112,15 @@
       state)))
 
 (defn- pong-update [state]
-  (-> state
-    (update-in [:ball] update-ball-pos (:delta-time state))
-    (update-in [:ball] check-horizontal-collision)
-    (update-in [:ball] check-vertical-collision (:left-racket state) (:right-racket state))
-    (update-in [:right-racket] update-right-racket (:ball state) (:delta-time state))
-    (check-for-goal)
-    (assoc :delta-time (delta-time (:last-millis state)) :last-millis (q/millis))))
+  (let [dt (:delta-time state)]
+    (-> state
+      (update-in [:ball] update-ball-pos dt)
+      (update-in [:ball] check-horizontal-collision)
+      (update-in [:ball] check-vertical-collision (:left-racket state) (:right-racket state))
+      (update-in [:left-racket] update-left-racket dt)
+      (update-in [:right-racket] update-right-racket (:ball state) dt)
+      (check-for-goal)
+      (assoc :delta-time (delta-time (:last-millis state)) :last-millis (q/millis)))))
 
 (defn- render [state]
   (q/background 0x20)
@@ -114,11 +131,19 @@
   (q/text (str "Score Left: " (first (:scores state))) 0 40)
   (q/text (str "Score Right: " (second (:scores state))) 600 40))
 
+  ; (defn- key-pressed [state event]
+  ;   (case (:key event)
+  ;     :w (update-in state [:left-racket :y] #(- % (* racket-speed (:delta-time state))))
+  ;     :s (update-in state [:left-racket :y] #(+ % (* racket-speed (:delta-time state))))
+  ;     state))
 (defn- key-pressed [state event]
   (case (:key event)
-    :w (update-in state [:left-racket :y] #(- % (* racket-speed (:delta-time state))))
-    :s (update-in state [:left-racket :y] #(+ % (* racket-speed (:delta-time state))))
+    :w (update-in state [:left-racket :y-vel] (fn [_] -1))
+    :s (update-in state [:left-racket :y-vel] (fn [_] 1))
     state))
+
+(defn- key-released [state]
+  (update-in state [:left-racket :y-vel] (fn [_] 0)))
 
 (defn- setup []
   (q/smooth)
@@ -133,5 +158,6 @@
     :draw render
     :update pong-update
     :key-pressed key-pressed
+    :key-released key-released
     :middleware [m/fun-mode]
     :features [:exit-on-close])
