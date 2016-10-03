@@ -1,7 +1,8 @@
 (ns clj-pong.core
   (:require [quil.core :as q]
             [quil.middleware :as m])
-  (:import [java.awt.event.KeyEvent]))
+  (:import [java.awt.event.KeyEvent])
+  (:gen-class))
 
 (def window-width 800)
 (def window-height 600)
@@ -149,13 +150,14 @@
   (q/text-font (q/create-font "DejaVu Sans" 28 true))
   (reset-game-field initial-game-state))
 
-(q/defsketch pong
-    :title "Pong!"
-    :size [window-width window-height]
-    :setup setup
-    :draw render
-    :update pong-update
-    :key-pressed key-pressed
-    :key-released key-released
-    :middleware [m/fun-mode]
-    :features [:exit-on-close])
+(defn -main [& args]
+  (q/sketch
+      :title "Pong!"
+      :size [window-width window-height]
+      :setup setup
+      :draw render
+      :update pong-update
+      :key-pressed key-pressed
+      :key-released key-released
+      :middleware [m/fun-mode]
+      :features [:exit-on-close]))
