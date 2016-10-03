@@ -85,8 +85,11 @@
       ball)) ball [left-racket right-racket]))
 
 (defn- update-left-racket [racket dt]
-  (println racket)
-  (assoc racket :y (+ (:y racket) (* racket-speed dt (:y-vel racket)))))
+  (let [racket (assoc racket :y (+ (:y racket) (* racket-speed dt (:y-vel racket))))]
+    (cond
+      (< (:y racket) 0) (assoc racket :y 0)
+      (> (+ (:y racket) racket-height) window-height) (assoc racket :y (- window-height racket-height))
+      :else racket)))
 
 (defn- update-right-racket [racket ball dt]
   (cond
@@ -131,11 +134,6 @@
   (q/text (str "Score Left: " (first (:scores state))) 0 40)
   (q/text (str "Score Right: " (second (:scores state))) 600 40))
 
-  ; (defn- key-pressed [state event]
-  ;   (case (:key event)
-  ;     :w (update-in state [:left-racket :y] #(- % (* racket-speed (:delta-time state))))
-  ;     :s (update-in state [:left-racket :y] #(+ % (* racket-speed (:delta-time state))))
-  ;     state))
 (defn- key-pressed [state event]
   (case (:key event)
     :w (update-in state [:left-racket :y-vel] (fn [_] -1))
