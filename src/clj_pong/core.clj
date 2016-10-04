@@ -96,7 +96,7 @@
   (cond
     (< (:y ball) (:y racket))
       (assoc racket :y (- (:y racket) (* racket-speed dt)))
-    (> (:y ball) (:y racket))
+    (> (+ (:y ball) ball-height) (+ (:y racket) racket-height))
       (assoc racket :y (+ (:y racket) (* racket-speed dt)))
     :else racket))
 
